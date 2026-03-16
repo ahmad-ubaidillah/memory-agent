@@ -1,0 +1,94 @@
+{
+  "name": "@memory-agent/mcp-server",
+  "version": "0.1.0",
+  "description": "Universal memory management MCP server for AI assistants. Provides persistent, semantic memory capabilities to Claude Desktop, Cursor, Windsurf, VS Code, and other MCP clients.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "memory",
+    "ai",
+    "claude",
+    "cursor",
+    "windsurf",
+    "persistent-memory",
+    "semantic-search",
+    "llm",
+    "embeddings",
+    "sqlite",
+    "context-management",
+    "ai-assistant",
+    "vscode",
+    "artificial-intelligence",
+    "memory-agent"
+  ],
+  "author": "Memory-Agent Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/memory-agent/memory-agent-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/memory-agent/memory-agent-mcp/issues"
+  },
+  "homepage": "https://github.com/memory-agent/memory-agent-mcp#readme",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "memory-agent-mcp": "./bin/memory-agent-mcp.js"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "node bin/memory-agent-mcp.js",
+    "start:bun": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target=node --sourcemap",
+    "build:types": "tsc --project tsconfig.build.json",
+    "build:all": "bun run build && bun run build:types",
+    "prepublishOnly": "bun run build:all && bun test",
+    "test": "bun test",
+    "test:unit": "bun test tests/unit/",
+    "test:integration": "bun test tests/integration/",
+    "test:coverage": "bun test --coverage",
+    "test:watch": "bun test --watch",
+    "bench": "tsx benchmarks/runner.ts",
+    "bench:tools": "tsx benchmarks/runner.ts --suite=tools",
+    "bench:core": "tsx benchmarks/runner.ts --suite=core",
+    "bench:scale": "tsx benchmarks/runner.ts --suite=scalability",
+    "bench:fixtures": "tsx benchmarks/fixtures/generate.ts",
+    "bench:compare": "tsx benchmarks/runner.ts --compare=baseline.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/ tests/",
+    "format": "biome format src/ tests/ --write",
+    "precommit": "bun run typecheck && bun run lint && bun test",
+    "clean": "rm -rf dist/ coverage/ .memory/",
+    "setup": "bun install && bun run setup:hooks",
+    "pack:dry": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8",
+    "neverthrow": "^8.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "bun-types": "^1.1.29",
+    "@types/node": "^20.11.16",
+    "@biomejs/biome": "^1.5.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
+  },
+  "packageManager": "bun@1.1.29",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
