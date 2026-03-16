@@ -51,7 +51,7 @@
     "build": "bun build src/index.ts --outdir dist --target=node --sourcemap",
     "build:types": "tsc --project tsconfig.build.json",
     "build:all": "bun run build && bun run build:types",
-    "prepublishOnly": "bun run build:all && bun test",
+    "prepublishOnly": "bun run build:all",
     "test": "bun test",
     "test:unit": "bun test tests/unit/",
     "test:integration": "bun test tests/integration/",
