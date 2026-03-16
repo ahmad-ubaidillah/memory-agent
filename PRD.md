@@ -439,6 +439,259 @@ Import memories from external source.
 
 ---
 
+## 🎯 VSCode Extension (Memory-Agent VSCode)
+
+Besides the MCP server, we will also build a VSCode extension to provide a graphical interface for:
+- Running SQL queries on memory database
+- Visualizing stored memories
+- AI-assisted decision making (relevance check, delete suggestions)
+
+**Note:** No chat feature - the extension focuses on data visualization and management. LLM (Qwen2-0.5B) is used for TOON distillation and decision assistance.
+
+### Extension Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    VSCode Extension                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐   │
+│  │ SQL Runner  │  │ Local LLM   │  │ Memory Visualizer│   │
+│  │   Panel     │  │   Chat      │  │    Panel        │   │
+│  └──────┬──────┘  └──────┬──────┘  └────────┬────────┘   │
+│         │                │                   │             │
+│         └────────────────┼───────────────────┘             │
+│                          ▼                                   │
+│               ┌─────────────────────┐                       │
+│               │   Webview Panel    │                       │
+│               │   (React/Svelte)   │                       │
+│               └──────────┬──────────┘                       │
+│                          │                                   │
+│                          ▼                                   │
+│               ┌─────────────────────┐                       │
+│               │   Extension Host   │                       │
+│               │   (TypeScript)    │                       │
+│               └──────────┬──────────┘                       │
+│                          │                                   │
+│         ┌────────────────┼────────────────┐                 │
+│         ▼                ▼                ▼                 │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐            │
+│  │   MCP      │  │   Ollama   │  │   SQLite   │            │
+│  │  Server    │  │    API     │  │   Direct   │            │
+│  └────────────┘  └────────────┘  └────────────┘            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Feature 1: SQL Runner
+
+Execute raw SQL queries on the memory database directly from VSCode.
+
+| Component | Description |
+|-----------|-------------|
+| **Monaco Editor** | SQL syntax highlighting, auto-completion |
+| **Query Results** | Table view with sorting, filtering |
+| **Export** | CSV, JSON, Markdown export options |
+| **History** | Query history with favorites |
+
+**Commands:**
+- `memory-vscode.runQuery` - Execute current SQL query
+- `memory-vscode.formatQuery` - Format SQL query
+- `memory-vscode.exportResults` - Export results to file
+
+**UI Layout:**
+```
+┌────────────────────────────────────────────────┐
+│ SQL Editor (Monaco)                           │
+│ ┌──────────────────────────────────────────┐  │
+│ │ SELECT * FROM memory_facts                │  │
+│ │ WHERE topic = 'architecture'              │  │
+│ │ ORDER BY importance_score DESC            │  │
+│ └──────────────────────────────────────────┘  │
+│ [▶ Run] [📋 Format] [💾 Save] [📤 Export]     │
+├────────────────────────────────────────────────┤
+│ Results (45 rows)                             │
+│ ┌────┬────────────┬───────────┬────────┬────┐ │
+│ │ ID │ Content    │ Topic    │ Score │Age │ │
+│ ├────┼────────────┼───────────┼────────┼────┤ │
+│ │ 1  │ Use Redis  │architec..│ 8.5   │2d  │ │
+│ │ 2  │ JWT in he..│security..│ 7.2   │5d  │ │
+│ └────┴────────────┴───────────┴────────┴────┘ │
+└────────────────────────────────────────────────┘
+```
+
+### Feature 2: Decision Helper
+
+AI-assisted decision making for memory management.
+
+| Component | Description |
+|-----------|-------------|
+| **Relevance Check** | Analyze if memory is still relevant |
+| **Delete Suggestions** | AI recommends memories to delete |
+| **Importance Review** | Suggest importance score adjustments |
+| **Merge Suggestions** | Find similar memories that could be merged |
+
+**Configuration:**
+```json
+{
+  "memory-vscode.llmModel": "qwen2.5-0.5b",
+  "memory-vscode.autoSuggestDeletes": true,
+  "memory-vscode.similarityThreshold": 0.85
+}
+```
+
+**Commands:**
+- `memory-vscode.analyzeMemory` - Analyze single memory
+- `memory-vscode.suggestDeletes` - Get delete suggestions
+- `memory-vscode.findDuplicates` - Find similar memories
+
+**UI Layout:**
+```
+┌────────────────────────────────────────────────┐
+│ 🤖 Decision Helper     [Analyze All] [Refresh]│
+├────────────────────────────────────────────────┤
+│ Suggestions (12)                              │
+│ ┌────────────────────────────────────────────┐ │
+│ │ 🗑️ Delete: "old debug log" (similar to #5)│ │
+│ │    Reason: Duplicate content               │ │
+│ │    [Keep] [Delete]                         │ │
+│ ├────────────────────────────────────────────┤ │
+│ │ ⚠️ Review: "JWT config"                    │ │
+│ │    Reason: Content may be outdated         │ │
+│ │    [View] [Ignore]                         │ │
+│ ├────────────────────────────────────────────┤ │
+│ │ 🔄 Merge: "auth middleware" & "auth-helper"│ │
+│ │    Similarity: 92%                         │ │
+│ │    [Merge] [Keep Separate]                 │ │
+│ └────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────┘
+```
+
+### Feature 3: Memory Visualizer
+
+Visualize stored memories in various formats for better understanding.
+
+| View Mode | Description |
+|-----------|-------------|
+| **Tree View** | Hierarchical view by topic/category |
+| **Timeline** | Memories plotted on timeline with decay visualization |
+| **Graph** | Knowledge graph showing relationships |
+| **Statistics** | Dashboard with charts and metrics |
+
+**Tree View Features:**
+- Expand/collapse nodes
+- Color-coded importance (red=high, yellow=medium, green=low)
+- Search/filter memories
+- Quick actions (edit, delete, archive)
+
+**Timeline Features:**
+- Zoomable timeline (day/week/month/year)
+- Decay visualization (fading opacity for old memories)
+- Access frequency indicators
+- Click to view memory details
+
+**Statistics Dashboard:**
+- Total memories count
+- Topic distribution (pie chart)
+- Storage usage
+- Memory health score
+- Decay/archive statistics
+
+**Commands:**
+- `memory-vscode.openVisualizer` - Open memory visualizer
+- `memory-vscode.refreshView` - Refresh current view
+- `memory-vscode.toggleView` - Switch between views
+
+**UI Layout:**
+```
+┌────────────────────────────────────────────────┐
+│ 📊 Memory Visualizer    [🔍 Search] [⟳ Refresh]│
+│ [Tree] [Timeline] [Graph] [Stats]             │
+├──────────────────┬─────────────────────────────┤
+│ Tree View        │ Memory Details             │
+│ ▼ 📁 architecture│ ┌─────────────────────────┐ │
+│   ▼ 📁 database  │ │ Title: Use PostgreSQL  │ │
+│     ├─ ID: 1 ★★★  │ │ Topic: architecture    │ │
+│     └─ ID: 2 ★★   │ │ Importance: 8.5        │ │
+│   ▼ 📁 api        │ │ Created: 2025-01-18    │ │
+│     └─ ID: 5 ★★★  │ │ Status: active         │ │
+│ ▼ 📁 decisions   │ │                         │ │
+│   └─ ID: 12 ★★★   │ │ [Edit] [Delete] [Archive]│
+│ ▼ 📁 bugs         │ └─────────────────────────┘ │
+│   └─ ID: 8 ★★     │                             │
+└──────────────────┴─────────────────────────────┘
+```
+
+### VSCode Extension Commands
+
+| Command | Description |
+|---------|-------------|
+| `memory-vscode.explore` | Open memory explorer panel |
+| `memory-vscode.query` | Open SQL runner panel |
+| `memory-vscode.llm` | Open local LLM chat |
+| `memory-vscode.stats` | Open statistics dashboard |
+| `memory-vscode.refresh` | Refresh all views |
+| `memory-vscode.configure` | Open extension settings |
+
+### Installation
+
+```bash
+# Install from VSCode Marketplace
+# Or install from .vsix file
+code --install-extension memory-agent.vsix
+```
+
+### Configuration
+
+```json
+{
+  "memory-vscode.dbPath": "${workspaceFolder}/.memory/memory.db",
+  "memory-vscode.ollamaEndpoint": "http://localhost:11434",
+  "memory-vscode.defaultModel": "qwen2.5:0.5b",
+  "memory-vscode.autoRefresh": true,
+  "memory-vscode.refreshInterval": 30,
+  "memory-vscode.theme": "auto"
+}
+```
+
+### Package Structure
+
+```
+memory-agent-vscode/
+├── package.json
+├── tsconfig.json
+├── src/
+│   ├── extension.ts          # Extension entry point
+│   ├── commands/             # VSCode commands
+│   ├── views/                # Webview panels
+│   │   ├── sqlRunner/
+│   │   ├── decisionHelper/
+│   │   └── visualizer/
+│   ├── services/             # Backend services
+│   │   ├── database.ts      # SQLite operations
+│   │   ├── llm.ts          # Qwen2-0.5B inference
+│   │   └── mcp.ts          # MCP server communication
+│   └── utils/
+├── webview/                  # React/Svelte UI
+│   ├── App.tsx
+│   ├── components/
+│   └── styles/
+└── icons/
+```
+
+### LLM Model: Qwen2-0.5B
+
+The extension uses **Qwen2-0.5B** as the primary LLM model for:
+- TOON distillation
+- Decision assistance (relevance check, delete suggestions)
+
+| Property | Value |
+|----------|-------|
+| **Model** | qwen2.5-0.5b-instruct-q4_k_m.gguf |
+| **Size** | ~350-500MB |
+| **RAM Usage** | ~500MB-1GB |
+| **Inference Speed** | 30-80 tok/sec |
+| **Setup** | Auto-download on first use |
+
+---
+
 ## 🔮 Memory Interceptor Architecture
 
 The Memory Interceptor is a middleware layer that enables automatic context injection and learning extraction, making the memory system seamless and always-on.
