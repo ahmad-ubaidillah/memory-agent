@@ -1,5 +1,5 @@
 {
-  "name": "@memory-agent/mcp-server",
+  "name": "memory-agent-mcp",
   "version": "1.0.0",
   "description": "Universal memory management MCP server for AI assistants. Provides persistent, semantic memory capabilities to Claude Desktop, Cursor, Windsurf, VS Code, and other MCP clients.",
   "keywords": [
