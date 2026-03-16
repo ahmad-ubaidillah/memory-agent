@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Lite Mode template with keyword search instructions
   - Comprehensive usage documentation
 
-## [2.0.0] - 2025-03-17
+## [1.0.0] - 2025-03-17
 
 ### Added
 - **Memory Interceptor System** (MEM-001)
